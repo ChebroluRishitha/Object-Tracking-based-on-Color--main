@@ -280,6 +280,15 @@ System detects:
 
 ---
 
+## ⚠️ Limitations
+
+- **Ambient Light Sensitivity**: HSV color thresholding is highly dependent on consistent lighting. Drastic changes in ambient light, shadows, or glare will alter the target's color signature and disrupt detection.
+- **Single Target Focus**: The tracking pipeline isolates and tracks only the single largest contour matching the HSV range, meaning multiple objects of the same color cannot be tracked independently.
+- **Vulnerability to Occlusion & Background Interference**: If the target is partially covered or if background elements share a similar color range, the tracker can lose the object or latch onto background noise.
+- **Static Calibration Requirement**: Threshold bounds are static and must be manually pre-calibrated via `simple_calibration.py`. The system lacks adaptive illumination adjustment or real-time color learning.
+
+---
+
 ## 📄 **License**
 
 Open source - Free to use and modify
