@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Object Tracker - Live Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            margin: 0;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            max-width: 1200px;
+            width: 100%;
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 1.8em;
+            margin-bottom: 5px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 0.95em;
+            margin: 0;
+        }
+        
+        .video-container {
+            position: relative;
+            flex: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+            border: 2px solid #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+            min-height: 300px;
+        }
+        
+        #video_feed {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+        }
+        
+        .status-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .status-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .status-box {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            border: 2px solid #667eea;
+            transition: all 0.3s ease;
+        }
+        
+        .status-box.detected {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            border-color: #2ecc71;
+        }
+        
+        .status-box.not-detected {
+            background: linear-gradient(135deg, #fa8072 0%, #ff6347 100%);
+            border-color: #e74c3c;
+        }
+        
+        .status-box.detected .status-value {
+            color: #27ae60;
+        }
+        
+        .status-box.not-detected .status-value {
+            color: #c0392b;
+        }
+        
+        .info-panel {
+            background: #ecf0f1;
+            border-radius: 12px;
+            padding: 12px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .info-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+        
+        .info-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+        }
+        
+        .info-item {
+            background: white;
+            padding: 8px;
+            border-radius: 8px;
+            border-left: 3px solid #667eea;
+            text-align: center;
+        }
+        
+        .info-item-label {
+            font-size: 0.75em;
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+        
+        .info-item-value {
+            font-size: 1.1em;
+            color: #667eea;
+            font-weight: bold;
+            margin-top: 3px;
+        }
+        
+        .footer {
+            text-align: center;
+            color: #95a5a6;
+            font-size: 0.85em;
+            padding-top: 10px;
+            border-top: 1px solid #ecf0f1;
+        }
+        
+        .detection-indicator {
+            font-size: 2em;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .status-panel {
+                grid-template-columns: 1fr;
+            }
+            
+            .status-value {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎥 Object Tracker</h1>
+            <p class="subtitle">Live Color Detection</p>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; height: 100%;">
+            <!-- Video -->
+            <div class="video-container">
+                <img id="video_feed" src="/video_feed" alt="Live Video Stream">
+            </div>
+            
+            <!-- Status Panel -->
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div class="status-box" id="detection-status">
+                    <div class="status-label">🎯 Detection</div>
+                    <div class="detection-indicator" id="status-icon">👁️</div>
+                    <div class="status-value" id="status-text">Waiting...</div>
+                </div>
+                
+                <div class="status-box">
+                    <div class="status-label">🧭 Direction</div>
+                    <div class="status-value" id="direction-text">---</div>
+                </div>
+                
+                <div class="info-panel" style="margin: 0; flex-grow: 1;">
+                    <div class="info-title">📊 Info</div>
+                    <div class="info-items" style="grid-template-columns: 1fr;">
+                        <div class="info-item">
+                            <div class="info-item-label">Size</div>
+                            <div class="info-item-value" id="radius-value">0 px</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-item-label">Update</div>
+                            <div class="info-item-value" id="update-time">Live</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer" style="margin-top: 15px;">
+            <p style="font-size: 0.85em;">🟢 Live Detection | Move object to see directions</p>
+        </div>
+    </div>
+    
+    <script>
+        function updateStatus() {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('status-text').textContent = data.status;
+                    document.getElementById('direction-text').textContent = data.direction;
+                    document.getElementById('radius-value').textContent = data.radius + ' px';
+                    
+                    const box = document.getElementById('detection-status');
+                    if (data.status.includes('DETECTED')) {
+                        box.classList.remove('not-detected');
+                        box.classList.add('detected');
+                        document.getElementById('status-icon').textContent = '✅';
+                    } else {
+                        box.classList.remove('detected');
+                        box.classList.add('not-detected');
+                        document.getElementById('status-icon').textContent = '❌';
+                    }
+                })
+                .catch(err => console.log('Status update error'));
+        }
+        
+        setInterval(updateStatus, 200);
+        updateStatus();
+        
+        window.addEventListener('load', function() {
+            document.getElementById('video_feed').src = '/video_feed?' + Math.random();
+        });
+    </script>
+</body>
+</html>
